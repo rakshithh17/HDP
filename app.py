@@ -4,7 +4,7 @@ import joblib
 import numpy as np
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Full CORS support
+CORS(app)  # Enables CORS for all routes and methods
 
 # Load model and scaler
 model = joblib.load("knn_model.pkl")
@@ -17,14 +17,18 @@ def home():
 @app.route('/predict', methods=['POST', 'OPTIONS'])
 def predict():
     if request.method == 'OPTIONS':
-        # Preflight request handling for CORS
-        return jsonify({}), 200
+        # Preflight request
+        response = jsonify({'message': 'CORS preflight passed'})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
 
     data = request.json
     input_features = np.array([list(data.values())])
     input_scaled = scaler.transform(input_features)
     prediction = model.predict(input_scaled)[0]
-    return jsonify({'prediction': int(prediction)})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    
+    response = jsonify({'prediction': int(prediction)})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
